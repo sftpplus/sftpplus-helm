@@ -33,10 +33,10 @@ port = 10020
 idle_connection_timeout = 1800
 cluster_activation = controller
 base_url_path:
-#accepted_origins: nieves.chevah.com
+UPDATED_AT_RENDER_SECURE_MANAGER_ORIGIN
 
 [services/DEFAULT-MANAGER-UNSECURED]
-enabled = no
+enabled = UPDATED_AT_RENDER_ADMIN_HTTP_ENABLED
 name = local-manager-http
 description = Can be used when SFTPPlus is behind a reverse proxy that handles TLS.
 type = _manager_unsecured
@@ -44,19 +44,17 @@ address = 0.0.0.0
 port = 10019
 idle_connection_timeout = 1800
 cluster_activation = controller
-base_url_path:
-#accepted_origins: nieves.chevah.com
+UPDATED_AT_RENDER_UNSECURED_MANAGER_ORIGIN
 
 [services/WORKER-MANAGER-DEBUG]
-enabled = no
+enabled = UPDATED_AT_RENDER_WORKER_DEBUG_ENABLED
 name = worker-manager-https
-type = manager
+type = UPDATED_AT_RENDER_WORKER_DEBUG_TYPE
 address = 0.0.0.0
-port = 12020
+port = UPDATED_AT_RENDER_WORKER_DEBUG_PORT
 cluster_activation = node
 idle_connection_timeout = 1800
-accepted_origins: k8s-sftpplus.chevah.com
-base_url_path: /worker-admin
+UPDATED_AT_RENDER_WORKER_MANAGER_ORIGIN
 
 [services/2f239f0b-928e-11f1-9c91-04cf4b0c43dd]
 enabled = yes
@@ -75,6 +73,16 @@ type = https
 address = 0.0.0.0
 port = 10443
 cluster_activation = node
+UPDATED_AT_RENDER_FILE_SERVICE_ORIGIN
+
+[services/31914cc8-2c0e-4c38-ba13-76f5ed174d0b]
+enabled = UPDATED_AT_RENDER_HTTP_FILE_ENABLED
+name = http-service
+type = http
+address = 0.0.0.0
+port = UPDATED_AT_RENDER_HTTP_FILE_PORT
+cluster_activation = node
+UPDATED_AT_RENDER_HTTP_FILE_ORIGIN
 
 [resources/DEFAULT-SQLITE]
 name = Embedded DB
@@ -115,7 +123,7 @@ sync_interval = 10
 sync_events = !40032, !40033
 
 [cluster-pools/worker]
-name = sftpplus-worker
+name = UPDATED_AT_RENDER_WORKER_POOL_NAME
 enabled = Yes
 password = UPDATED_AT_INIT_WORKER_HASH_PASSWORD
 

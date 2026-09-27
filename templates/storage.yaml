@@ -1,0 +1,24 @@
+{{- if .Values.storage.createIfMissing }}
+{{- $claimName := include "sftpplus.storageClaimName" . }}
+{{- $existing := lookup "v1" "PersistentVolumeClaim" .Release.Namespace $claimName | default dict }}
+{{- $metadata := get $existing "metadata" | default dict }}
+{{- $annotations := get $metadata "annotations" | default dict }}
+{{- $labels := get $metadata "labels" | default dict }}
+{{- $owned := and (eq (get $annotations "meta.helm.sh/release-name") .Release.Name) (eq (get $annotations "meta.helm.sh/release-namespace") .Release.Namespace) (eq (get $labels "app.kubernetes.io/managed-by") "Helm") }}
+{{- if or (not $existing) $owned }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $claimName }}
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+{{- if .Values.storage.retain }}
+  annotations:
+    helm.sh/resource-policy: keep
+{{- end }}
+spec:
+{{ toYaml (required "storage.claimSpec is required when creating a PVC" .Values.storage.claimSpec) | indent 2 }}
+{{- end }}
+{{- end }}

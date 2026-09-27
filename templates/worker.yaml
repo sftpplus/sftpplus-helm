@@ -1,3 +1,4 @@
+{{- $podLabels := include "sftpplus.podLabels" (dict "root" . "component" "worker") | fromYaml }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,21 +8,22 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: worker
 spec:
-  replicas: {{ .Values.worker.replicaCount }}
+  replicas: {{ .Values.workerDeployment.replicaCount }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/component: worker
+      app.kubernetes.io/instance: {{ index $podLabels "app.kubernetes.io/instance" | quote }}
+      app.kubernetes.io/component: {{ index $podLabels "app.kubernetes.io/component" | quote }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: sftpplus
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/component: worker
+{{ toYaml $podLabels | indent 8 }}
       annotations:
-        checksum/initialization: {{ include "sftpplus.configChecksum" . }}
+{{ include "sftpplus.podAnnotations" (dict "root" . "component" "worker") | indent 8 }}
     spec:
+{{- with .Values.workerDeployment.serviceAccountName }}
+      serviceAccountName: {{ . | quote }}
+{{- end }}
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -47,6 +49,16 @@ spec:
             - name: https-files
               containerPort: 10443
               protocol: TCP
+{{- if .Values.workerService.httpFiles.enabled }}
+            - name: http-files
+              containerPort: {{ .Values.workerService.httpFiles.port }}
+              protocol: TCP
+{{- end }}
+{{- if .Values.workerService.workerDebug.enabled }}
+            - name: worker-debug
+              containerPort: {{ .Values.workerService.workerDebug.port }}
+              protocol: TCP
+{{- end }}
           volumeMounts:
             - name: storage
               mountPath: /opt/sftpplus-storage
@@ -59,7 +71,7 @@ spec:
       volumes:
         - name: storage
           persistentVolumeClaim:
-            claimName: {{ required "storage.existingClaim is required" .Values.storage.existingClaim | quote }}
+            claimName: {{ include "sftpplus.storageClaimName" . | quote }}
         - name: initialization
           configMap:
             name: {{ include "sftpplus.fullname" . }}-initialization
@@ -75,17 +87,47 @@ metadata:
     app.kubernetes.io/name: sftpplus
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: worker
+{{- with .Values.workerService.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
-  type: NodePort
+  type: {{ .Values.workerService.type }}
+{{- with .Values.workerService.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.workerService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+{{- end }}
   selector:
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: worker
+    app.kubernetes.io/instance: {{ index $podLabels "app.kubernetes.io/instance" | quote }}
+    app.kubernetes.io/component: {{ index $podLabels "app.kubernetes.io/component" | quote }}
   ports:
     - name: sftp
-      port: 10022
+      port: {{ .Values.workerService.sftpPort }}
+{{- if and (eq .Values.workerService.type "NodePort") .Values.workerService.sftpNodePort }}
+      nodePort: {{ .Values.workerService.sftpNodePort }}
+{{- end }}
       targetPort: sftp
       protocol: TCP
     - name: https-files
-      port: 10443
+      port: {{ .Values.workerService.httpsPort }}
+{{- if and (eq .Values.workerService.type "NodePort") .Values.workerService.httpsNodePort }}
+      nodePort: {{ .Values.workerService.httpsNodePort }}
+{{- end }}
       targetPort: https-files
       protocol: TCP
+
+{{- if .Values.workerService.httpFiles.enabled }}
+    - name: http-files
+      port: {{ .Values.workerService.httpFiles.port }}
+      targetPort: http-files
+      protocol: TCP
+{{- end }}
+{{- if .Values.workerService.workerDebug.enabled }}
+    - name: worker-debug
+      port: {{ .Values.workerService.workerDebug.servicePort }}
+      targetPort: worker-debug
+      protocol: TCP
+{{- end }}

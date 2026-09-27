@@ -1,3 +1,4 @@
+{{- $podLabels := include "sftpplus.podLabels" (dict "root" . "component" "admin") | fromYaml }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,17 +12,18 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/component: admin
+      app.kubernetes.io/instance: {{ index $podLabels "app.kubernetes.io/instance" | quote }}
+      app.kubernetes.io/component: {{ index $podLabels "app.kubernetes.io/component" | quote }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: sftpplus
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/component: admin
+{{ toYaml $podLabels | indent 8 }}
       annotations:
-        checksum/initialization: {{ include "sftpplus.configChecksum" . }}
+{{ include "sftpplus.podAnnotations" (dict "root" . "component" "admin") | indent 8 }}
     spec:
+{{- with .Values.adminDeployment.serviceAccountName }}
+      serviceAccountName: {{ . | quote }}
+{{- end }}
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -47,6 +49,11 @@ spec:
             - name: manager-https
               containerPort: 10020
               protocol: TCP
+{{- if .Values.adminService.http.enabled }}
+            - name: manager-http
+              containerPort: {{ .Values.adminService.http.port }}
+              protocol: TCP
+{{- end }}
           volumeMounts:
             - name: storage
               mountPath: /opt/sftpplus-storage
@@ -62,7 +69,7 @@ spec:
       volumes:
         - name: storage
           persistentVolumeClaim:
-            claimName: {{ required "storage.existingClaim is required" .Values.storage.existingClaim | quote }}
+            claimName: {{ include "sftpplus.storageClaimName" . | quote }}
         - name: initialization
           configMap:
             name: {{ include "sftpplus.fullname" . }}-initialization
@@ -81,13 +88,49 @@ metadata:
     app.kubernetes.io/name: sftpplus
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: admin
+{{- with .Values.adminService.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
-  type: NodePort
+  type: {{ .Values.adminService.type }}
+{{- with .Values.adminService.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.adminService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+{{- end }}
   selector:
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: admin
+    app.kubernetes.io/instance: {{ index $podLabels "app.kubernetes.io/instance" | quote }}
+    app.kubernetes.io/component: {{ index $podLabels "app.kubernetes.io/component" | quote }}
   ports:
     - name: manager-https
-      port: 10020
+      port: {{ .Values.adminService.port }}
+{{- if and (eq .Values.adminService.type "NodePort") .Values.adminService.nodePort }}
+      nodePort: {{ .Values.adminService.nodePort }}
+{{- end }}
       targetPort: manager-https
       protocol: TCP
+
+{{- if .Values.adminService.http.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sftpplus.adminHttpName" . }}
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ index $podLabels "app.kubernetes.io/instance" | quote }}
+    app.kubernetes.io/component: {{ index $podLabels "app.kubernetes.io/component" | quote }}
+  ports:
+    - name: manager-http
+      port: {{ .Values.adminService.http.port }}
+      targetPort: manager-http
+      protocol: TCP
+{{- end }}

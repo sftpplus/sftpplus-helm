@@ -14,7 +14,7 @@ fi
 
 mkdir -p docs
 "$helm_bin" lint . \
-  --set-string storage.existingClaim=lint-pvc \
+  --set-string storage.claimName=lint-pvc \
   --set-string credentials.adminPassword=lint-admin \
   --set-string credentials.workerPassword=lint-worker
 "$helm_bin" package . --destination docs

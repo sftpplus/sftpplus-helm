@@ -1,0 +1,23 @@
+# Scaleway SFS is a shared file system. Confirm this StorageClass exists.
+storage:
+  claimSpec:
+    storageClassName: sfs-standard
+    accessModes:
+      - ReadWriteMany
+    resources:
+      requests:
+        storage: 25Gi
+
+adminService:
+  type: LoadBalancer
+  annotations: {}
+  port: 10020
+
+workerService:
+  type: LoadBalancer
+  annotations: {}
+  sftpPort: 10022
+  httpsPort: 10443
+
+# Add a Scaleway load balancer ID annotation only when reusing an existing LB.
+# Set firewall rules and DNS for the allocated load balancer addresses.

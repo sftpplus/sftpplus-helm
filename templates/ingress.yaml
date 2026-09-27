@@ -1,0 +1,90 @@
+{{- range $component := list "admin" "worker" }}
+{{- $cfg := index $.Values.ingress $component }}
+{{- if $cfg.enabled }}
+{{- $host := $cfg.host | default $.Values.ingress.host }}
+{{- if not $host }}{{ fail (printf "ingress.%s.host is required when enabled" $component) }}{{ end }}
+{{- if eq $component "admin" }}
+{{- $backendPort := $cfg.backendPort | default "manager-https" }}
+{{- if not (has $backendPort (list "manager-https" "manager-http")) }}{{ fail "ingress.admin.backendPort must be manager-https or manager-http" }}{{ end }}
+{{- if and (eq $backendPort "manager-http") (not $.Values.adminService.http.enabled) }}{{ fail "adminService.http.enabled is required for manager-http ingress" }}{{ end }}
+{{- if and $cfg.workerDebug.enabled (not $.Values.workerService.workerDebug.enabled) }}{{ fail "workerService.workerDebug.enabled is required for worker debug ingress" }}{{ end }}
+{{- $serviceName := include "sftpplus.adminName" $ }}
+{{- $backendName := $serviceName }}
+{{- if eq $backendPort "manager-http" }}{{ $backendName = include "sftpplus.adminHttpName" $ }}{{ end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+{{- with $cfg.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- with $cfg.className }}
+  ingressClassName: {{ . | quote }}
+{{- end }}
+{{- with $cfg.tlsSecretName }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ . | quote }}
+{{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: {{ $cfg.path | quote }}
+            pathType: {{ $cfg.pathType }}
+            backend:
+              service:
+                name: {{ $backendName }}
+                port:
+                  name: {{ $backendPort }}
+{{- if $cfg.workerDebug.enabled }}
+          - path: {{ $cfg.workerDebug.path | quote }}
+            pathType: {{ $cfg.workerDebug.pathType }}
+            backend:
+              service:
+                name: {{ include "sftpplus.workerName" $ }}
+                port:
+                  name: worker-debug
+{{- end }}
+{{- else }}
+{{- $backendPort := $cfg.backendPort | default "https-files" }}
+{{- if not (has $backendPort (list "https-files" "http-files")) }}{{ fail "ingress.worker.backendPort must be https-files or http-files" }}{{ end }}
+{{- if and (eq $backendPort "http-files") (not $.Values.workerService.httpFiles.enabled) }}{{ fail "workerService.httpFiles.enabled is required for http-files ingress" }}{{ end }}
+{{- $serviceName := include "sftpplus.workerName" $ }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+{{- with $cfg.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- with $cfg.className }}
+  ingressClassName: {{ . | quote }}
+{{- end }}
+{{- with $cfg.tlsSecretName }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ . | quote }}
+{{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: {{ $cfg.path | quote }}
+            pathType: {{ $cfg.pathType }}
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: {{ $backendPort }}
+{{- end }}
+{{- end }}
+{{- end }}

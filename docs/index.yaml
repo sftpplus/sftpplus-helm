@@ -3,7 +3,17 @@ entries:
   sftpplus:
   - apiVersion: v2
     appVersion: 6.1.0
-    created: "2026-09-27T14:03:16.201750559+01:00"
+    created: "2026-09-27T19:40:01.015375579+01:00"
+    description: SFTPPlus controller and file transfer workers for Kubernetes
+    digest: c88221051901b7d46580faf77fbba56c536ac69cd46c4845fd802c61f58e8886
+    name: sftpplus
+    type: application
+    urls:
+    - https://helm.sftpplus.com/sftpplus-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 6.1.0
+    created: "2026-09-27T19:40:01.014562232+01:00"
     description: SFTPPlus controller and file transfer workers for Kubernetes
     digest: cc7a9dbd518c9da95595f94e6dbf2f82f322b55203e66058b4ede20c77ecf544
     name: sftpplus
@@ -11,4 +21,4 @@ entries:
     urls:
     - https://helm.sftpplus.com/sftpplus-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-27T14:03:16.201304742+01:00"
+generated: "2026-09-27T19:40:01.014072644+01:00"

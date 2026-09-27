@@ -1,3 +1,37 @@
+{{- $host := .Values.ingress.host | default "" -}}
+{{- $adminIni := .Files.Get "files/server-admin.ini.init" -}}
+{{- $workerIni := .Files.Get "files/server-worker.ini.init" -}}
+{{- $protocol := .Values.workerDeployment.sync.protocol -}}
+{{- if not (has $protocol (list "http" "https")) }}{{ fail "worker.sync.protocol must be http or https" }}{{ end }}
+{{- if and (eq $protocol "http") (not .Values.adminService.http.enabled) }}{{ fail "adminService.http.enabled is required for HTTP worker synchronization" }}{{ end }}
+{{- $adminName := include "sftpplus.adminName" . -}}
+{{- $adminPort := .Values.adminService.port -}}
+{{- if eq $protocol "http" -}}
+{{- $adminName = include "sftpplus.adminHttpName" . -}}
+{{- $adminPort = .Values.adminService.http.port -}}
+{{- end -}}
+{{- $workerIni = replace "UPDATED_AT_RENDER_ADMIN_URL" (printf "%s://%s:%v" $protocol $adminName $adminPort) $workerIni -}}
+{{- $workerIni = replace "UPDATED_AT_RENDER_WORKER_POOL_NAME" .Values.workerDeployment.poolName $workerIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_POOL_NAME" .Values.workerDeployment.poolName $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_ADMIN_HTTP_ENABLED" (ternary "yes" "no" .Values.adminService.http.enabled) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_ENABLED" (ternary "yes" "no" .Values.workerService.workerDebug.enabled) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_TYPE" .Values.workerService.workerDebug.type $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_PORT" (toString .Values.workerService.workerDebug.port) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_ENABLED" (ternary "yes" "no" .Values.workerService.httpFiles.enabled) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_PORT" (toString .Values.workerService.httpFiles.port) $adminIni -}}
+{{- if $host -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_SECURE_MANAGER_ORIGIN" (printf "accepted_origins: %s" $host) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_UNSECURED_MANAGER_ORIGIN" (printf "base_url_path: /admin\naccepted_origins: %s" $host) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_MANAGER_ORIGIN" (printf "base_url_path: /worker-admin\naccepted_origins: %s" $host) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_FILE_SERVICE_ORIGIN" (printf "accepted_origins: %s" $host) $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_ORIGIN" (printf "accepted_origins: %s" $host) $adminIni -}}
+{{- else -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_SECURE_MANAGER_ORIGIN" "" $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_UNSECURED_MANAGER_ORIGIN" "base_url_path:" $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_MANAGER_ORIGIN" "base_url_path:" $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_FILE_SERVICE_ORIGIN" "" $adminIni -}}
+{{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_ORIGIN" "" $adminIni -}}
+{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,9 +41,9 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   server-admin.ini.init: |
-{{ .Files.Get "files/server-admin.ini.init" | indent 4 }}
+{{ $adminIni | indent 4 }}
   server-worker.ini.init: |
-{{ .Files.Get "files/server-worker.ini.init" | replace "UPDATED_AT_RENDER_ADMIN_SERVICE" (include "sftpplus.adminName" .) | indent 4 }}
+{{ $workerIni | indent 4 }}
   admin-init.sh: |
 {{ .Files.Get "files/admin-init.sh" | indent 4 }}
   worker-init.sh: |

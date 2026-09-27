@@ -1,7 +1,19 @@
-# An existing PVC shared by the controller and all workers. The chart never
-# creates or deletes this claim.
+# The controller and workers share one PVC. When createIfMissing is true,
+# use claimName if it exists or create it from claimSpec if it does not.
+# An empty claimName defaults to RELEASE-sftpplus-storage.
+# Use a StorageClass that supports ReadWriteMany for pods on different nodes.
 storage:
-  existingClaim: ""
+  createIfMissing: true
+  claimName: ""
+  # Retain a chart-created claim when the release is uninstalled.
+  retain: true
+  claimSpec:
+    accessModes:
+      - ReadWriteMany
+    resources:
+      requests:
+        storage: 10Gi
+    # Set storageClassName to a shared-file StorageClass available in the cluster.
 
 image:
   repository: proatria/sftpplus-trial
@@ -22,5 +34,84 @@ credentials:
   # Shared secret used by the controller to authorize workers.
   workerPassword: ""
 
-worker:
+# Existing ServiceAccount names and pod template metadata are independent for
+# the controller and workers. Custom labels replace default labels on conflict.
+adminDeployment:
+  serviceAccountName: ""
+  templateMetadata:
+    labels: {}
+    annotations: {}
+
+workerDeployment:
   replicaCount: 1
+  poolName: sftpplus-worker
+  sync:
+    # Use https (default) or http for the controller connection.
+    protocol: https
+  serviceAccountName: ""
+  templateMetadata:
+    labels: {}
+    annotations: {}
+
+# External Services are configured separately. ClusterIP works with an
+# ingress controller; LoadBalancer needs a cloud or cluster LB implementation.
+# Provider-specific LB annotations go under the corresponding annotations map.
+adminService:
+  type: NodePort
+  annotations: {}
+  port: 10020
+  nodePort: null
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: ""
+  # Optional ClusterIP Service for the unsecured manager port.
+  http:
+    enabled: false
+    port: 10019
+
+workerService:
+  type: NodePort
+  annotations: {}
+  sftpPort: 10022
+  httpsPort: 10443
+  sftpNodePort: null
+  httpsNodePort: null
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: ""
+  # Optional HTTP file transfer and worker debug ports.
+  httpFiles:
+    enabled: false
+    port: 10080
+  workerDebug:
+    enabled: false
+    type: manager
+    port: 12020
+    servicePort: 12020
+
+# Optional HTTP ingress routes. SFTP is TCP and requires a LoadBalancer,
+# NodePort, or an ingress controller with separate TCP forwarding support.
+ingress:
+  # Common ingress hostname used for accepted_origins and URL paths in the
+  # initial server.ini. Component hosts below override it for Ingress rules.
+  host: ""
+  admin:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: Prefix
+    backendPort: manager-https
+    tlsSecretName: ""
+    workerDebug:
+      enabled: false
+      path: /worker-admin
+      pathType: Prefix
+  worker:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: Prefix
+    backendPort: https-files
+    tlsSecretName: ""

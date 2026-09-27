@@ -1,0 +1,29 @@
+# Vultr VFS is a shared file system. Confirm this StorageClass exists.
+storage:
+  claimSpec:
+    storageClassName: vultr-vfs-storage
+    accessModes:
+      - ReadWriteMany
+    resources:
+      requests:
+        storage: 10Gi
+
+# Keep Web Manager internal and publish it through an existing ingress
+# controller. Change the hostname and TLS secret to your own values.
+adminService:
+  type: ClusterIP
+
+ingress:
+  host: manager.example.com
+  admin:
+    enabled: true
+    className: nginx
+    path: /
+    pathType: Prefix
+    tlsSecretName: sftpplus-manager-tls
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+
+# SFTP needs a TCP load balancer; HTTP ingress cannot forward SFTP traffic.
+workerService:
+  type: LoadBalancer
