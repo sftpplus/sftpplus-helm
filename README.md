@@ -96,6 +96,8 @@ line is added and these base paths are empty. The unsecured manager and worker d
 override the common host for Ingress rules, but `ingress.host` is the value
 written to `server.ini`.
 
+The initial configuration includes `test_user` and the default group (`DEFAULT_GROUP`) as disabled entries. They are blocked by default for security reasons and cannot be used to sign in or transfer files unless an administrator explicitly enables and configures them.
+
 The controller initializes `configuration/server.ini` on the claim only when that file does not exist. At that time it hashes both passwords and generates a TLS certificate and SSH host key. Existing configuration is kept on upgrades and restarts. Changing `credentials.adminPassword` or `credentials.workerPassword` in Helm values does not change passwords in an already initialized `server.ini`. Change the administrator password in Web Manager. Coordinate a worker password change with the cluster pool password in Web Manager and restart the workers with the updated Helm value.
 
 With `storage.createIfMissing=true`, the chart uses an existing claim with

@@ -68,7 +68,7 @@ cluster_activation = node
 
 [services/75b10f05-928e-11f1-a5d5-04cf4b0c43dd]
 enabled = yes
-name = http-service
+name = https-service
 type = https
 address = 0.0.0.0
 port = 10443
