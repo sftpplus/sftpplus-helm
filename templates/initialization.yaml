@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sftpplus.fullname" . }}-initialization
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  server-admin.ini.init: |
+{{ .Files.Get "files/server-admin.ini.init" | indent 4 }}
+  server-worker.ini.init: |
+{{ .Files.Get "files/server-worker.ini.init" | replace "UPDATED_AT_RENDER_ADMIN_SERVICE" (include "sftpplus.adminName" .) | indent 4 }}
+  admin-init.sh: |
+{{ .Files.Get "files/admin-init.sh" | indent 4 }}
+  worker-init.sh: |
+{{ .Files.Get "files/worker-init.sh" | indent 4 }}

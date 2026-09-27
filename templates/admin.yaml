@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sftpplus.adminName" . }}
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: admin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sftpplus
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: admin
+      annotations:
+        checksum/initialization: {{ include "sftpplus.configChecksum" . }}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+{{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      containers:
+        - name: admin
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/opt/sftpplus-initialization/admin-init.sh"]
+          env:
+            - name: SFTPPLUS_CONFIGURATION
+              value: /opt/sftpplus-storage/configuration
+          ports:
+            - name: manager-https
+              containerPort: 10020
+              protocol: TCP
+          volumeMounts:
+            - name: storage
+              mountPath: /opt/sftpplus-storage
+            - name: initialization
+              mountPath: /opt/sftpplus-initialization
+              readOnly: true
+            - name: worker-credentials
+              mountPath: /opt/sftpplus-worker-credentials
+              readOnly: true
+            - name: admin-credentials
+              mountPath: /opt/sftpplus-admin-credentials
+              readOnly: true
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ required "storage.existingClaim is required" .Values.storage.existingClaim | quote }}
+        - name: initialization
+          configMap:
+            name: {{ include "sftpplus.fullname" . }}-initialization
+        - name: worker-credentials
+          secret:
+            secretName: {{ include "sftpplus.fullname" . }}-worker-credentials
+        - name: admin-credentials
+          secret:
+            secretName: {{ include "sftpplus.fullname" . }}-admin-credentials
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sftpplus.adminName" . }}
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin
+  ports:
+    - name: manager-https
+      port: 10020
+      targetPort: manager-https
+      protocol: TCP

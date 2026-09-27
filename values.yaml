@@ -1,0 +1,26 @@
+# An existing PVC shared by the controller and all workers. The chart never
+# creates or deletes this claim.
+storage:
+  existingClaim: ""
+
+image:
+  repository: proatria/sftpplus-trial
+  tag: latest
+  pullPolicy: Always
+
+# Names of existing image pull secrets in the release namespace.
+imagePullSecrets: []
+#  - name: registry-pull-secret
+
+# Applied to both controller and worker pods. Ensure the PVC can be mounted
+# on every node selected by these rules.
+nodeSelector: {}
+
+credentials:
+  # Required for a new installation. The administrator is named "admin".
+  adminPassword: ""
+  # Shared secret used by the controller to authorize workers.
+  workerPassword: ""
+
+worker:
+  replicaCount: 1

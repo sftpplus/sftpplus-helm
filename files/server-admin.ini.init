@@ -1,0 +1,132 @@
+[server]
+uuid = admin-uuid
+name = sftpplus-admin
+product_key =
+tls_private_certificate = default-tls-private-certificate
+ssh_server_keys = default-ssh-rsa-key
+
+[administrators/DEFAULT-ADMINISTRATOR-UUID]
+enabled = yes
+name = admin
+password = UPDATED_AT_INIT_ADMIN_HASH_PASSWORD
+roles = DEFAULT-ROLE
+
+[accounts/8f3471fb-927b-11f1-b7ab-04cf4b0c43dd]
+name = test_user
+enabled = no
+home_folder_path = /opt/sftpplus-storage/user-files/test_user
+
+[event-handlers/e137661a-150d-48f4-9239-4d9661492c11]
+enabled = True
+type = standard-stream
+name = Standard Output Logger
+entry_content = {timestamp.iso_8601_local} {id} {component.uuid} {account.name} {account.peer.address}:{account.peer.port} {message}
+#
+event_groups: !informational
+
+[services/DEFAULT-MANAGER]
+enabled = yes
+name = local-manager-https
+type = manager
+address = 0.0.0.0
+port = 10020
+idle_connection_timeout = 1800
+cluster_activation = controller
+base_url_path:
+#accepted_origins: nieves.chevah.com
+
+[services/DEFAULT-MANAGER-UNSECURED]
+enabled = no
+name = local-manager-http
+description = Can be used when SFTPPlus is behind a reverse proxy that handles TLS.
+type = _manager_unsecured
+address = 0.0.0.0
+port = 10019
+idle_connection_timeout = 1800
+cluster_activation = controller
+base_url_path:
+#accepted_origins: nieves.chevah.com
+
+[services/WORKER-MANAGER-DEBUG]
+enabled = no
+name = worker-manager-https
+type = manager
+address = 0.0.0.0
+port = 12020
+cluster_activation = node
+idle_connection_timeout = 1800
+accepted_origins: k8s-sftpplus.chevah.com
+base_url_path: /worker-admin
+
+[services/2f239f0b-928e-11f1-9c91-04cf4b0c43dd]
+enabled = yes
+name = sftp-service
+type = ssh
+sftp = Yes
+scp = No
+address = 0.0.0.0
+port = 10022
+cluster_activation = node
+
+[services/75b10f05-928e-11f1-a5d5-04cf4b0c43dd]
+enabled = yes
+name = http-service
+type = https
+address = 0.0.0.0
+port = 10443
+cluster_activation = node
+
+[resources/DEFAULT-SQLITE]
+name = Embedded DB
+type = sqlite
+path = configuration/cache.db3
+
+[event-handlers/d7f250c8-927b-11f1-8f8a-04cf4b0c43dd]
+enabled = Yes
+name = Audit log
+type = database
+path = configuration/audit-logs.db3
+auto_delete = 7
+event_groups = !informational
+servers = all
+cluster_activation = controller
+
+[resources/DEFAULT-ANALYTICS]
+enabled = Yes
+type = analytics
+name = Analytics engine
+monitor_interval = 600
+description = Check resource usage every 10 minutes.
+
+[roles/DEFAULT-ROLE]
+enabled = yes
+name = Default role not used for workers
+
+[groups/DEFAULT_GROUP]
+enabled = No
+name = Default group not used for workers
+
+[resources/DEFAULT-NODE-SYNC]
+enabled = yes
+type = node-sync
+name = SFTPPlus cluster
+role_in_cluster = controller
+sync_interval = 10
+sync_events = !40032, !40033
+
+[cluster-pools/worker]
+name = sftpplus-worker
+enabled = Yes
+password = UPDATED_AT_INIT_WORKER_HASH_PASSWORD
+
+[vault-items/default-ssh-rsa-key]
+name = Default SSH key
+type = ssh-private
+content =
+UPDATED_AT_INIT_SSH
+
+[vault-items/default-tls-private-certificate]
+name = Default self-signed certificate
+type = private-certificate
+content =
+UPDATED_AT_INIT_TLS

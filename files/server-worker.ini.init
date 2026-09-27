@@ -1,0 +1,21 @@
+[server]
+uuid = worker-uuid
+name = sftpplus-worker
+
+[event-handlers/e137661a-150d-48f4-9239-4d9661492c11]
+enabled = True
+type = standard-stream
+name = Standard Output Logger
+entry_content = {timestamp.iso_8601_local} {id} {component.name} {account.name} {account.peer.address}:{account.peer.port} {message}
+
+[resources/DEFAULT-NODE-SYNC]
+enabled = yes
+type = node-sync
+name = SFTPPlus cluster synchronization
+role_in_cluster = node
+sync_interval = 10
+url = https://UPDATED_AT_RENDER_ADMIN_SERVICE:10020
+tls_trusted_certificates = pin-public-key
+pool_name = sftpplus-worker
+node_name = UPDATED_AT_INIT_INSTANCE_NAME
+password = UPDATED_AT_INIT_INSTANCE_PASSWORD
