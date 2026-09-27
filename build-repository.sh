@@ -12,10 +12,27 @@ if ! command -v "$helm_bin" >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p dist
+mkdir -p docs
 "$helm_bin" lint . \
   --set-string storage.existingClaim=lint-pvc \
   --set-string credentials.adminPassword=lint-admin \
   --set-string credentials.workerPassword=lint-worker
-"$helm_bin" package . --destination dist
-"$helm_bin" repo index dist --url "${repository_url%/}/"
+"$helm_bin" package . --destination docs
+"$helm_bin" repo index docs --url "${repository_url%/}/"
+
+printf 'helm.sftpplus.com\n' > docs/CNAME
+cat > docs/index.html <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SFTPPlus Helm repository</title>
+</head>
+<body>
+  <h1>SFTPPlus Helm repository</h1>
+  <p>Add this repository with Helm:</p>
+  <pre>helm repo add sftpplus https://helm.sftpplus.com/</pre>
+  <p><a href="index.yaml">Chart index</a></p>
+</body>
+</html>
+HTML

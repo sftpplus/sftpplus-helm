@@ -1,5 +1,6 @@
 .git/
 .github/
+docs/
 dist/
 build-repository.sh
 *.tgz
