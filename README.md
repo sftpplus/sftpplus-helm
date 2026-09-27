@@ -100,8 +100,23 @@ The initial configuration includes `test_user` and the default group (`DEFAULT_G
 
 The controller initializes `configuration/server.ini` on the claim only when that file does not exist. At that time it hashes both passwords and generates a TLS certificate and SSH host key. Existing configuration is kept on upgrades and restarts. Changing `credentials.adminPassword` or `credentials.workerPassword` in Helm values does not change passwords in an already initialized `server.ini`. Change the administrator password in Web Manager. Coordinate a worker password change with the cluster pool password in Web Manager and restart the workers with the updated Helm value.
 
-With `storage.createIfMissing=true`, the chart uses an existing claim with
-`storage.claimName` or creates it if missing. Chart-created claims are retained on uninstall by default; set `storage.retain=false` only if deleting the release should also delete its claim. Back up the claim separately. To start with fresh data, use a new empty claim.
+## Persistent storage on uninstall
+
+With `storage.createIfMissing=true`, the chart uses the PVC named by
+`storage.claimName` when it already exists, or creates it from
+`storage.claimSpec` when it is missing. By default, a PVC created by the chart
+is kept after `helm uninstall`. This is the default setting:
+
+```yaml
+storage:
+  retain: true
+```
+
+The chart adds Helm's `helm.sh/resource-policy: keep` annotation to a PVC it
+creates. Set `storage.retain: false` if Helm should delete a chart-created PVC
+on uninstall. A PVC that existed before installation is not managed by this
+chart and is not deleted on uninstall. Keep a separate backup of the PVC data.
+To start with fresh data, use a new empty claim.
 
 ## HTTP ingress example
 
