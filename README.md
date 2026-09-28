@@ -19,6 +19,15 @@ support@proatria.com for guidance. Keep the Web Manager admin interface on a
 separate ingress or load balancer from public file transfers. The examples in
 this chart can share one public hostname for a proof of concept.
 
+## Maintenance and review
+
+This Helm chart is maintained and reviewed with the assistance of LLM tools.
+The YAML deployments in
+[sftpplus-kubernetes](https://github.com/sftpplus/sftpplus-kubernetes) were
+written entirely by a person, without LLM tools, and form the basis for
+changes in this repository. A person reviews every change to this chart and
+manually tests it in our private testing environments.
+
 ## Prerequisites
 
 - A Kubernetes cluster with Helm 3.
