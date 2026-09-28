@@ -2,10 +2,17 @@
 
 This chart deploys one SFTPPlus controller and one or more file transfer workers. The controller manages configuration and the workers serve SFTP and HTTPS file transfers. The chart can create a shared persistent volume claim and optional HTTPS ingress routes.
 
-This chart focuses on a simple proof-of-concept installation. It does not
-expose the full range of SFTPPlus capabilities. For more advanced deployment
-examples that show how to use SFTPPlus more flexibly, see
-[sftpplus-kubernetes](https://github.com/sftpplus/sftpplus-kubernetes).
+SFTPPlus deployment on Kubernetes is simple at its core: it uses one
+container image and an initializer that creates a standard `.ini`
+configuration file. We encourage you to write Kubernetes YAML tailored to
+your requirements for maximum control and simplicity. See
+[sftpplus-kubernetes](https://github.com/sftpplus/sftpplus-kubernetes) for
+examples that use the full range of SFTPPlus capabilities.
+
+This chart is more complex because it accommodates a variety of Kubernetes
+environments. It focuses on a proof-of-concept installation and uses one
+shared storage volume for configuration and user files. SFTPPlus supports
+multiple storage options that this chart does not expose.
 
 For a production deployment, contact the SFTPPlus support team at
 support@proatria.com for guidance. Keep the Web Manager admin interface on a
@@ -77,7 +84,7 @@ The chart does not rewrite an existing `server.ini`.
 
 | Value | Purpose |
 | --- | --- |
-| `storage.createIfMissing`, `storage.claimName` | Use the named PVC if present, or create it from `claimSpec` if missing. An empty name defaults to `<release>-sftpplus-storage`. |
+| `storage.createIfMissing`, `storage.claimName` | Use the named PVC if present, or create it from `claimSpec` if missing. An empty name defaults to `<release>-storage`. |
 | `storage.claimSpec` | Full `spec` of a chart-created PersistentVolumeClaim, including access modes, storage request, and optional storage class. |
 | `storage.retain` | Keep a chart-created claim after uninstall (default: true). |
 | `storage.permissions` | Optional root init container that sets the shared claim root owner, group, and mode. Disabled by default; available from chart 0.3.0. |
@@ -100,7 +107,18 @@ The chart does not rewrite an existing `server.ini`.
 
 ## Services and initial configuration
 
-Chart-managed resources use the Helm release name as a prefix, including the default PVC name. For multiple releases in one cluster, use a different release name and PVC for each. Give each installation its own ingress hostname, TLS Secret, and external SFTP port or load balancer route.
+Chart-managed resources use the Helm release name as a prefix, including
+the default PVC name. For a release named `sftpplus`, the Services are
+`sftpplus-admin-https` on port 10020, optional `sftpplus-admin-http` on port
+10019, and `sftpplus-worker` for the transfer ports. The HTTPS manager is
+reachable within the cluster at
+`sftpplus-admin-https.<namespace>.svc.cluster.local:10020`.
+
+Use release names of 51 characters or fewer to keep the full name in each
+resource. For longer names, the chart shortens the release prefix to its
+first 42 characters and appends an eight-character hash. This keeps Service
+names within Kubernetes' 63-character limit. Check the rendered Service names
+with `helm template` before adding external TCP forwarding rules.
 
 The chart creates two external Services, which default to NodePort. Run `kubectl -n sftpplus get svc` to find the assigned ports or load balancer addresses. The controller Service exposes Web Manager over HTTPS on target port 10020. The worker Service exposes SFTP on 10022 and HTTPS file transfers on 10443. The unsecured Web Manager, HTTP file transfer, and worker debug services are disabled by default. Enable them only when an ingress controller or another trusted proxy handles public TLS and access control. Workers connect to the controller through its release-specific Service name.
 

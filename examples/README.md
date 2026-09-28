@@ -40,7 +40,7 @@ For Vultr SFTP, configure the nginx ingress controller's TCP services
 ConfigMap to forward external port `10022` to the chart-created worker Service:
 
 ```yaml
-10022: 'YOUR_NAMESPACE/RELEASE-sftpplus-worker:10022:PROXY'
+10022: 'YOUR_NAMESPACE/RELEASE-worker:10022:PROXY'
 ```
 
 The nginx LoadBalancer must expose TCP `10022`, and its firewall must allow

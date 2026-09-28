@@ -9,7 +9,7 @@
 {{- if and (eq $backendPort "manager-http") (not $.Values.adminService.http.enabled) }}{{ fail "adminService.http.enabled is required for manager-http ingress" }}{{ end }}
 {{- if and $cfg.workerDebug.enabled (not $.Values.workerService.workerDebug.enabled) }}{{ fail "workerService.workerDebug.enabled is required for worker debug ingress" }}{{ end }}
 {{- $serviceName := include "sftpplus.adminName" $ }}
-{{- $backendName := $serviceName }}
+{{- $backendName := include "sftpplus.adminHttpsName" $ }}
 {{- if eq $backendPort "manager-http" }}{{ $backendName = include "sftpplus.adminHttpName" $ }}{{ end }}
 ---
 apiVersion: networking.k8s.io/v1

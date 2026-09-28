@@ -1,5 +1,9 @@
 {{- define "sftpplus.fullname" -}}
-{{- printf "%s-sftpplus" .Release.Name | trunc 54 | trimSuffix "-" -}}
+{{- if gt (len .Release.Name) 51 -}}
+{{- printf "%s-%s" (trimSuffix "-" (trunc 42 .Release.Name)) (trunc 8 (sha256sum .Release.Name)) -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "sftpplus.adminName" -}}
@@ -32,6 +36,10 @@
 {{- $defaults := dict "checksum/initialization" (include "sftpplus.configChecksum" $root) -}}
 {{- $custom := (index $root.Values (printf "%sDeployment" $component)).templateMetadata.annotations | default dict -}}
 {{- toYaml (mergeOverwrite (deepCopy $custom) $defaults) -}}
+{{- end -}}
+
+{{- define "sftpplus.adminHttpsName" -}}
+{{- printf "%s-https" (include "sftpplus.adminName" .) -}}
 {{- end -}}
 
 {{- define "sftpplus.adminHttpName" -}}

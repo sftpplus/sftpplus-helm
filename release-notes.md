@@ -1,5 +1,12 @@
 # Helm chart release notes
 
+## 0.4.0 (2026-09-28)
+
+- Removed the repeated chart name from resources. For a release named `sftpplus`, the Services are now `sftpplus-admin-https` on port 10020, optional `sftpplus-admin-http` on port 10019, and `sftpplus-worker` for file transfers.
+- Changed the default PVC name to `<release>-storage`. Set `storage.claimName` to the existing claim when upgrading so its data remains in use.
+- Update external TCP forwarding rules and any other references to the renamed Services before upgrading. Long release names are shortened with a stable hash; use names of 51 characters or fewer to keep the full release name.
+- For multiple releases in one cluster, use a different release name and PVC for each. Give each installation its own ingress hostname, TLS Secret, and external SFTP port or load balancer route.
+
 ## 0.3.0 (2026-09-28)
 
 - Added an optional init container to set the shared claim root permissions for storage such as Vultr VFS.

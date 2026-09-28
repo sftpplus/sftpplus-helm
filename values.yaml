@@ -1,6 +1,6 @@
 # The controller and workers share one PVC. When createIfMissing is true,
 # use claimName if it exists or create it from claimSpec if it does not.
-# An empty claimName defaults to RELEASE-sftpplus-storage.
+# An empty claimName defaults to RELEASE-storage.
 # Use a StorageClass that supports ReadWriteMany for pods on different nodes.
 storage:
   createIfMissing: true

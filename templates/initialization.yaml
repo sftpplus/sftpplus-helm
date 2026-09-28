@@ -4,7 +4,7 @@
 {{- $protocol := .Values.workerDeployment.sync.protocol -}}
 {{- if not (has $protocol (list "http" "https")) }}{{ fail "worker.sync.protocol must be http or https" }}{{ end }}
 {{- if and (eq $protocol "http") (not .Values.adminService.http.enabled) }}{{ fail "adminService.http.enabled is required for HTTP worker synchronization" }}{{ end }}
-{{- $adminName := include "sftpplus.adminName" . -}}
+{{- $adminName := include "sftpplus.adminHttpsName" . -}}
 {{- $adminPort := .Values.adminService.port -}}
 {{- if eq $protocol "http" -}}
 {{- $adminName = include "sftpplus.adminHttpName" . -}}
