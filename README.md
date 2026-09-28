@@ -2,6 +2,16 @@
 
 This chart deploys one SFTPPlus controller and one or more file transfer workers. The controller manages configuration and the workers serve SFTP and HTTPS file transfers. The chart can create a shared persistent volume claim and optional HTTPS ingress routes.
 
+This chart focuses on a simple proof-of-concept installation. It does not
+expose the full range of SFTPPlus capabilities. For more advanced deployment
+examples that show how to use SFTPPlus more flexibly, see
+[sftpplus-kubernetes](https://github.com/sftpplus/sftpplus-kubernetes).
+
+For a production deployment, contact the SFTPPlus support team at
+support@proatria.com for guidance. Keep the Web Manager admin interface on a
+separate ingress or load balancer from public file transfers. The examples in
+this chart can share one public hostname for a proof of concept.
+
 ## Prerequisites
 
 - A Kubernetes cluster with Helm 3.
@@ -56,6 +66,11 @@ helm upgrade production sftpplus/sftpplus \
 
 `helm repo update` refreshes the list of available charts. `helm upgrade` applies the new chart. `--reuse-values` keeps the existing PVC, image, and password settings. Review the new chart's values before upgrading if any settings need to change.
 
+Chart 0.3.0 changes the default worker pool name to `sftpplus-worker-pool`.
+When upgrading an existing initialized claim, check its pool name in
+`server.ini` and set `workerDeployment.poolName` to that value if different.
+The chart does not rewrite an existing `server.ini`.
+
 ## Helm values
 
 **From version:** 6.1.0
@@ -65,6 +80,7 @@ helm upgrade production sftpplus/sftpplus \
 | `storage.createIfMissing`, `storage.claimName` | Use the named PVC if present, or create it from `claimSpec` if missing. An empty name defaults to `<release>-sftpplus-storage`. |
 | `storage.claimSpec` | Full `spec` of a chart-created PersistentVolumeClaim, including access modes, storage request, and optional storage class. |
 | `storage.retain` | Keep a chart-created claim after uninstall (default: true). |
+| `storage.permissions` | Optional root init container that sets the shared claim root owner, group, and mode. Disabled by default; available from chart 0.3.0. |
 | `adminService`, `workerService` | Service type (`NodePort`, `LoadBalancer`, or `ClusterIP`), ports, annotations, and optional load balancer settings. |
 | `ingress.host` | Optional common hostname used for `accepted_origins` in a newly initialized `server.ini` and as the default Ingress rule host. |
 | `ingress.admin`, `ingress.worker` | Optional HTTPS ingress routes with independent host overrides, class names, annotations, and TLS secrets. |
@@ -75,14 +91,16 @@ helm upgrade production sftpplus/sftpplus \
 | `nodeSelector` | Kubernetes node selection rules for both deployments. |
 | `adminDeployment.serviceAccountName`, `workerDeployment.serviceAccountName` | Existing ServiceAccount names for the controller and workers. |
 | `adminDeployment.templateMetadata`, `workerDeployment.templateMetadata` | Extra pod template labels and annotations. Custom labels override defaults. |
-| `workerDeployment.replicaCount`, `workerDeployment.poolName` | Number of worker pods and the shared cluster pool name. |
+| `workerDeployment.replicaCount`, `workerDeployment.poolName` | Number of worker pods and the shared cluster pool name. The default pool is `sftpplus-worker-pool`. |
 | `workerDeployment.sync.protocol` | Controller connection protocol: `https` by default, or `http` when `adminService.http.enabled=true`. |
 | `adminService.http` | Optional internal HTTP Web Manager Service on port 10019. |
-| `workerService.httpFiles`, `workerService.workerDebug` | Optional HTTP file transfer and worker manager ports. |
+| `workerService.httpFiles`, `workerService.workerDebug` | Optional HTTP file transfer and worker manager ports. The worker debug manager always uses HTTP (`_manager_unsecured`). |
 | `ingress.admin.backendPort`, `ingress.worker.backendPort` | Select the named Service port used by each ingress route. |
 | `ingress.admin.workerDebug` | Optional worker manager route on the admin ingress. |
 
 ## Services and initial configuration
+
+Chart-managed resources use the Helm release name as a prefix, including the default PVC name. For multiple releases in one cluster, use a different release name and PVC for each. Give each installation its own ingress hostname, TLS Secret, and external SFTP port or load balancer route.
 
 The chart creates two external Services, which default to NodePort. Run `kubectl -n sftpplus get svc` to find the assigned ports or load balancer addresses. The controller Service exposes Web Manager over HTTPS on target port 10020. The worker Service exposes SFTP on 10022 and HTTPS file transfers on 10443. The unsecured Web Manager, HTTP file transfer, and worker debug services are disabled by default. Enable them only when an ingress controller or another trusted proxy handles public TLS and access control. Workers connect to the controller through its release-specific Service name.
 
@@ -118,17 +136,37 @@ on uninstall. A PVC that existed before installation is not managed by this
 chart and is not deleted on uninstall. Keep a separate backup of the PVC data.
 To start with fresh data, use a new empty claim.
 
+Some shared file systems mount a new claim root as `root:root` with mode
+`0755`, so the SFTPPlus process running as UID 1000 cannot create its initial
+configuration. Set `storage.permissions.enabled: true` to run a root init
+container in the admin pod before SFTPPlus starts:
+
+```yaml
+storage:
+  permissions:
+    enabled: true
+    uid: 1000
+    gid: 1000
+    mode: "0770"
+```
+
+The init container uses the selected SFTPPlus image and changes only the
+claim root directory. It does not recursively change existing files. The
+setting is disabled by default. On Vultr VFS, enable it for a new claim; if
+reusing a claim, check existing file ownership separately.
+
 ## HTTP ingress example
 
-For a reverse proxy that terminates TLS and enforces basic auth, enable the
-internal HTTP manager Service, HTTP file transfer, and worker debug routes.
-Set `workerDeployment.sync.protocol: http` to connect workers through the
-internal manager Service. The example in the server repository at
-`infrastructure/sftpplus-helm-values.yaml` configures these routes for
-`/admin`, `/worker-admin`, and `/`, respectively. Provide the ingress class,
-TLS Secret, authentication Secret, and controller for your cluster. These
-settings affect `server.ini` only when initializing a new claim; changing
-Helm values does not rewrite an existing configuration file.
+For a reverse proxy that terminates TLS, enable the internal HTTP manager
+Service, HTTP file transfer, and worker debug routes. Set
+`workerDeployment.sync.protocol: http` to connect workers through the internal
+manager Service. The [on-premises example](examples/onpremise-values.yaml)
+configures `/admin`, `/worker-admin`, and `/` for these services. Provide an
+ingress controller, ingress class, and TLS Secret for your cluster. The
+example does not configure access control for the admin routes; protect them
+before exposing them publicly. These settings affect `server.ini` only when
+initializing a new claim; changing Helm values does not rewrite an existing
+configuration file.
 
 ## Publish a chart version
 
@@ -167,9 +205,11 @@ path to the admin ingress. SFTP is TCP and is never exposed by these HTTP ingres
 rules. Restrict access to Web Manager at the load balancer, firewall, or
 ingress layer.
 
-Example values for [Scaleway](examples/scaleway-values.yaml) and
-[Vultr](examples/vultr-values.yaml) show storage classes and external access
-based on the deployment examples. Adjust storage classes, hostnames, TLS
+The [example deployments](examples/README.md) include values for
+[Scaleway](examples/scaleway-values.yaml),
+[Vultr](examples/vultr-values.yaml), and
+[on-premises Kubernetes](examples/onpremise-values.yaml). They show storage
+classes and external access for each environment. Adjust storage classes, hostnames, TLS
 secrets, load balancer annotations, and firewall rules for your cluster.
 For AWS, Azure, and Google Kubernetes clusters, select a provisioner that
 supports shared read/write mounts and use provider-specific Service

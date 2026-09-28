@@ -48,8 +48,8 @@ UPDATED_AT_RENDER_UNSECURED_MANAGER_ORIGIN
 
 [services/WORKER-MANAGER-DEBUG]
 enabled = UPDATED_AT_RENDER_WORKER_DEBUG_ENABLED
-name = worker-manager-https
-type = UPDATED_AT_RENDER_WORKER_DEBUG_TYPE
+name = worker-manager-http
+type = _manager_unsecured
 address = 0.0.0.0
 port = UPDATED_AT_RENDER_WORKER_DEBUG_PORT
 cluster_activation = node

@@ -37,6 +37,27 @@ spec:
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- if .Values.storage.permissions.enabled }}
+{{- $uid := toString .Values.storage.permissions.uid }}
+{{- $gid := toString .Values.storage.permissions.gid }}
+{{- $mode := toString .Values.storage.permissions.mode }}
+{{- if not (regexMatch "^[0-9]+$" $uid) }}{{ fail "storage.permissions.uid must be a nonnegative integer" }}{{ end }}
+{{- if not (regexMatch "^[0-9]+$" $gid) }}{{ fail "storage.permissions.gid must be a nonnegative integer" }}{{ end }}
+{{- if not (regexMatch "^[0-7]{3,4}$" $mode) }}{{ fail "storage.permissions.mode must be a three- or four-digit octal mode" }}{{ end }}
+      initContainers:
+        - name: prepare-storage
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - {{ printf "chown %s:%s /opt/sftpplus-storage && chmod %s /opt/sftpplus-storage" $uid $gid $mode | quote }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: storage
+              mountPath: /opt/sftpplus-storage
+{{- end }}
       containers:
         - name: admin
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}

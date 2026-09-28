@@ -15,7 +15,6 @@
 {{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_POOL_NAME" .Values.workerDeployment.poolName $adminIni -}}
 {{- $adminIni = replace "UPDATED_AT_RENDER_ADMIN_HTTP_ENABLED" (ternary "yes" "no" .Values.adminService.http.enabled) $adminIni -}}
 {{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_ENABLED" (ternary "yes" "no" .Values.workerService.workerDebug.enabled) $adminIni -}}
-{{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_TYPE" .Values.workerService.workerDebug.type $adminIni -}}
 {{- $adminIni = replace "UPDATED_AT_RENDER_WORKER_DEBUG_PORT" (toString .Values.workerService.workerDebug.port) $adminIni -}}
 {{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_ENABLED" (ternary "yes" "no" .Values.workerService.httpFiles.enabled) $adminIni -}}
 {{- $adminIni = replace "UPDATED_AT_RENDER_HTTP_FILE_PORT" (toString .Values.workerService.httpFiles.port) $adminIni -}}

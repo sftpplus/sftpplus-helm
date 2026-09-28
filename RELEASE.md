@@ -9,13 +9,16 @@ versions of the SFTPPlus chart. Each published version has its own package in
 1. Update `version` in `Chart.yaml` for every chart release (for example,
    from `0.1.0` to `0.2.0`). `appVersion` identifies the SFTPPlus application
    version and only needs to change when that version changes.
-2. Run `./build-repository.sh` from the repository root. It lints and packages
+2. Add the version, publication date, and user-visible changes to
+   [release-notes.md](release-notes.md). Use the date the version first
+   appears in the Helm repository.
+3. Run `./build-repository.sh` from the repository root. It lints and packages
    the chart, then rebuilds `docs/index.yaml` from the chart packages in
    `docs/`.
-3. Check that the new package, such as `docs/sftpplus-0.2.1.tgz`, and the
+4. Check that the new package, such as `docs/sftpplus-0.3.0.tgz`, and the
    previous packages are present. Keep previous packages so their versions
    remain in the regenerated index and available to install.
-4. Commit and push `Chart.yaml`, the chart changes, the new package, and
+5. Commit and push `Chart.yaml`, the chart changes, the new package, and
    `docs/index.yaml` to `main`. GitHub Pages serves the `docs/` directory.
 
 Do not replace the package for an already published chart version. Increment
@@ -37,7 +40,7 @@ an existing release while retaining its current values:
 
 ```sh
 helm upgrade production sftpplus/sftpplus \
-  --namespace sftpplus --version 0.2.1 --reuse-values
+  --namespace sftpplus --version 0.3.0 --reuse-values
 ```
 
 The selected chart version is independent of the SFTPPlus `appVersion`.

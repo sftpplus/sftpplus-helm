@@ -14,6 +14,13 @@ storage:
       requests:
         storage: 10Gi
     # Set storageClassName to a shared-file StorageClass available in the cluster.
+  # Prepare the root of a shared claim for the SFTPPlus process. This runs once
+  # per admin pod start; it does not recursively change existing files.
+  permissions:
+    enabled: false
+    uid: 1000
+    gid: 1000
+    mode: "0770"
 
 image:
   repository: proatria/sftpplus-trial
@@ -44,7 +51,7 @@ adminDeployment:
 
 workerDeployment:
   replicaCount: 1
-  poolName: sftpplus-worker
+  poolName: sftpplus-worker-pool
   sync:
     # Use https (default) or http for the controller connection.
     protocol: https
@@ -83,7 +90,6 @@ workerService:
     port: 10080
   workerDebug:
     enabled: false
-    type: manager
     port: 12020
     servicePort: 12020
 

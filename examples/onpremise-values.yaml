@@ -1,23 +1,25 @@
-# Vultr VKE with Vultr VFS and an existing nginx ingress controller.
-# Replace uppercase placeholders before deployment. The chart creates a
-# release-specific PVC. Configure TCP forwarding separately; see README.md.
+# On-premises Kubernetes with an existing ingress controller and shared PVC.
+# Replace uppercase placeholders before deployment. Use a storage class that
+# supports ReadWriteMany so the controller and workers can run on any node.
 
 storage:
   createIfMissing: true
-  claimName: ""
-  retain: true
+  claimName: YOUR_PVC_NAME
   claimSpec:
-    storageClassName: vultr-vfs-storage
+    storageClassName: YOUR_STORAGE_CLASS
     accessModes:
       - ReadWriteMany
     resources:
       requests:
-        storage: 10Gi
-  permissions:
-    enabled: true
-    uid: 1000
-    gid: 1000
-    mode: "0770"
+        storage: 1G
+
+image:
+  repository: YOUR_IMAGE_REPOSITORY
+  tag: YOUR_IMAGE_TAG
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: YOUR_IMAGE_PULL_SECRET
 
 # Helm rejects empty passwords. Supply both with --set-file during install.
 credentials:
@@ -28,16 +30,32 @@ workerDeployment:
   replicaCount: 1
   sync:
     protocol: http
+  # Optional: remove this and the Azure label below if workload identity is unused.
+  serviceAccountName: YOUR_WORKLOAD_IDENTITY_SERVICE_ACCOUNT
+  templateMetadata:
+    labels:
+      azure.workload.identity/use: "true"
+
+adminDeployment:
+  # Optional: remove this and the Azure label below if workload identity is unused.
+  serviceAccountName: YOUR_WORKLOAD_IDENTITY_SERVICE_ACCOUNT
+  templateMetadata:
+    labels:
+      azure.workload.identity/use: "true"
 
 adminService:
-  type: ClusterIP
+  type: NodePort
+  port: 10020
+  nodePort: 30020
   http:
     enabled: true
     port: 10019
 
 workerService:
-  type: ClusterIP
+  type: NodePort
   sftpPort: 10022
+  httpsPort: 10443
+  sftpNodePort: 30022
   httpFiles:
     enabled: true
     port: 10080
@@ -47,7 +65,7 @@ workerService:
     servicePort: 12020
 
 # Web Manager: /admin; worker debug: /worker-admin (one worker only);
-# Web Client: /. nginx terminates TLS for the HTTP backends.
+# Web Client: /. Add access control to the admin routes for production.
 ingress:
   host: YOUR_SFTPPLUS_HOST
   admin:
