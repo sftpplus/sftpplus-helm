@@ -80,7 +80,7 @@ helm upgrade production sftpplus/sftpplus \
   --namespace sftpplus --reuse-values
 ```
 
-`helm repo update` refreshes the list of available charts. `helm upgrade` applies the new chart. `--reuse-values` keeps the existing PVC, image, and password settings. Review the new chart's values before upgrading if any settings need to change.
+`helm repo update` refreshes the list of available charts. `helm upgrade` applies the new chart. `--reuse-values` keeps the existing PVC, image, and password settings. Review the new chart's values before upgrading if any settings need to change. When adding `--values` to an upgrade, omit empty `credentials.adminPassword` and `credentials.workerPassword` entries from that file; they override the saved passwords.
 
 Chart 0.3.0 changes the default worker pool name to `sftpplus-worker-pool`.
 When upgrading an existing initialized claim, check its pool name in
@@ -99,6 +99,7 @@ The chart does not rewrite an existing `server.ini`.
 | `storage.permissions` | Optional root init container that sets the shared claim root owner, group, and mode. Disabled by default; available from chart 0.3.0. |
 | `adminService`, `workerService` | Service type (`NodePort`, `LoadBalancer`, or `ClusterIP`), ports, annotations, and optional load balancer settings. |
 | `ingress.host` | Optional common hostname used for `accepted_origins` in a newly initialized `server.ini` and as the default Ingress rule host. |
+| `ingress.certificate` | Optional cert-manager `Certificate` for `ingress.host`; set `issuerRef.name` to an existing `Issuer` or `ClusterIssuer`. The generated TLS Secret is used by enabled Ingresses. Available from chart 0.5.0. |
 | `ingress.admin`, `ingress.worker` | Optional HTTPS ingress routes with independent host overrides, class names, annotations, and TLS secrets. |
 | `credentials.adminPassword` | Required initial password for the `admin` account. |
 | `credentials.workerPassword` | Required initial shared worker password. |
@@ -113,6 +114,30 @@ The chart does not rewrite an existing `server.ini`.
 | `workerService.httpFiles`, `workerService.workerDebug` | Optional HTTP file transfer and worker manager ports. The worker debug manager always uses HTTP (`_manager_unsecured`). |
 | `ingress.admin.backendPort`, `ingress.worker.backendPort` | Select the named Service port used by each ingress route. |
 | `ingress.admin.workerDebug` | Optional worker manager route on the admin ingress. |
+
+## TLS certificates with cert-manager
+
+Set `ingress.certificate.enabled: true` to create one cert-manager
+`Certificate` for `ingress.host`. Set `ingress.certificate.issuerRef.name` to
+an existing `Issuer` or `ClusterIssuer` and use `issuerRef.kind` to choose
+which one. The chart does not install cert-manager or create an issuer.
+cert-manager must be installed in the cluster, and the issuer must be ready.
+For Let's Encrypt HTTP-01, the issuer's challenge route must be reachable on
+public port 80.
+
+By default, the Certificate and both enabled Ingresses use the Secret named
+`<release>-tls`. Set `ingress.certificate.secretName` to use another name.
+When certificate management is enabled, each enabled Ingress must use
+`ingress.host` and must not specify a different `tlsSecretName`. Do not add
+cert-manager issuer annotations to the Ingresses: the chart creates the
+Certificate directly, and cert-manager writes and renews the TLS Secret.
+
+When moving an existing release from Ingress annotations to this option,
+remove the issuer annotations from its saved Helm values and delete the old
+Ingress-created `Certificate` before enabling the chart-managed Certificate
+for the same Secret. cert-manager leaves the issued Secret in place when the
+old `Certificate` is deleted. This avoids two Certificate resources managing
+one Secret.
 
 ## Services and initial configuration
 

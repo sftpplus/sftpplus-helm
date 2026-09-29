@@ -45,3 +45,7 @@
 {{- define "sftpplus.adminHttpName" -}}
 {{- printf "%s-http" (include "sftpplus.adminName" .) -}}
 {{- end -}}
+
+{{- define "sftpplus.certificateSecretName" -}}
+{{- default (printf "%s-tls" (include "sftpplus.fullname" .)) .Values.ingress.certificate.secretName -}}
+{{- end -}}

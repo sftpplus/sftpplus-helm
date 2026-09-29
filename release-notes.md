@@ -1,5 +1,11 @@
 # Helm chart release notes
 
+## 0.5.0 (2026-09-29)
+
+- Added optional cert-manager Certificate creation for `ingress.host`. The controller and worker Ingresses can share the issued TLS Secret; an existing Issuer or ClusterIssuer is required.
+- Updated the on-premises and Vultr examples to use the chart-managed Certificate. When upgrading from Ingress-based issuance, remove the old issuer annotations and Certificate before enabling this option for the same Secret.
+- Removed empty password placeholders from the example values so existing releases can upgrade with `--reuse-values` without supplying the passwords again.
+
 ## 0.4.0 (2026-09-28)
 
 - Removed the repeated chart name from resources. For a release named `sftpplus`, the Services are now `sftpplus-admin-https` on port 10020, optional `sftpplus-admin-http` on port 10019, and `sftpplus-worker` for file transfers.

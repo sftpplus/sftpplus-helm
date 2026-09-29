@@ -99,6 +99,15 @@ ingress:
   # Common ingress hostname used for accepted_origins and URL paths in the
   # initial server.ini. Component hosts below override it for Ingress rules.
   host: ""
+  # Optional cert-manager Certificate for ingress.host. An Issuer or
+  # ClusterIssuer must already exist in the cluster. When enabled, both
+  # ingress routes use this Certificate's Secret by default.
+  certificate:
+    enabled: false
+    secretName: ""
+    issuerRef:
+      name: ""
+      kind: ClusterIssuer
   admin:
     enabled: false
     className: ""

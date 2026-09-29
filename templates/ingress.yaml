@@ -3,6 +3,15 @@
 {{- if $cfg.enabled }}
 {{- $host := $cfg.host | default $.Values.ingress.host }}
 {{- if not $host }}{{ fail (printf "ingress.%s.host is required when enabled" $component) }}{{ end }}
+{{- $tlsSecret := $cfg.tlsSecretName }}
+{{- if $.Values.ingress.certificate.enabled }}
+{{- $annotations := $cfg.annotations | default dict }}
+{{- if or (hasKey $annotations "cert-manager.io/issuer") (hasKey $annotations "cert-manager.io/cluster-issuer") }}{{ fail (printf "ingress.%s.annotations must not set a cert-manager issuer when ingress.certificate.enabled is true" $component) }}{{ end }}
+{{- $certificateSecret := include "sftpplus.certificateSecretName" $ }}
+{{- if ne $host $.Values.ingress.host }}{{ fail (printf "ingress.%s.host must match ingress.host when ingress.certificate.enabled is true" $component) }}{{ end }}
+{{- if and $tlsSecret (ne $tlsSecret $certificateSecret) }}{{ fail (printf "ingress.%s.tlsSecretName must match the managed Certificate Secret" $component) }}{{ end }}
+{{- $tlsSecret = $certificateSecret }}
+{{- end }}
 {{- if eq $component "admin" }}
 {{- $backendPort := $cfg.backendPort | default "manager-https" }}
 {{- if not (has $backendPort (list "manager-https" "manager-http")) }}{{ fail "ingress.admin.backendPort must be manager-https or manager-http" }}{{ end }}
@@ -24,7 +33,7 @@ spec:
 {{- with $cfg.className }}
   ingressClassName: {{ . | quote }}
 {{- end }}
-{{- with $cfg.tlsSecretName }}
+{{- with $tlsSecret }}
   tls:
     - hosts:
         - {{ $host | quote }}
@@ -68,7 +77,7 @@ spec:
 {{- with $cfg.className }}
   ingressClassName: {{ . | quote }}
 {{- end }}
-{{- with $cfg.tlsSecretName }}
+{{- with $tlsSecret }}
   tls:
     - hosts:
         - {{ $host | quote }}

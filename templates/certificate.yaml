@@ -1,0 +1,20 @@
+{{- if .Values.ingress.certificate.enabled }}
+{{- $host := required "ingress.host is required when ingress.certificate.enabled is true" .Values.ingress.host }}
+{{- $issuerName := required "ingress.certificate.issuerRef.name is required when ingress.certificate.enabled is true" .Values.ingress.certificate.issuerRef.name }}
+{{- $issuerKind := .Values.ingress.certificate.issuerRef.kind | default "ClusterIssuer" }}
+{{- if not (has $issuerKind (list "Issuer" "ClusterIssuer")) }}{{ fail "ingress.certificate.issuerRef.kind must be Issuer or ClusterIssuer" }}{{ end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "sftpplus.fullname" . }}-certificate
+  labels:
+    app.kubernetes.io/name: sftpplus
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  secretName: {{ include "sftpplus.certificateSecretName" . | quote }}
+  dnsNames:
+    - {{ $host | quote }}
+  issuerRef:
+    name: {{ $issuerName | quote }}
+    kind: {{ $issuerKind | quote }}
+{{- end }}

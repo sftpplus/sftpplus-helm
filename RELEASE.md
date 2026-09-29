@@ -15,7 +15,7 @@ versions of the SFTPPlus chart. Each published version has its own package in
 3. Run `./build-repository.sh` from the repository root. It lints and packages
    the chart, then rebuilds `docs/index.yaml` from the chart packages in
    `docs/`.
-4. Check that the new package, such as `docs/sftpplus-0.4.0.tgz`, and the
+4. Check that the new package, such as `docs/sftpplus-0.5.0.tgz`, and the
    previous packages are present. Keep previous packages so their versions
    remain in the regenerated index and available to install.
 5. Commit and push `Chart.yaml`, the chart changes, the new package, and
@@ -40,7 +40,7 @@ an existing release while retaining its current values:
 
 ```sh
 helm upgrade production sftpplus/sftpplus \
-  --namespace sftpplus --version 0.4.0 --reuse-values
+  --namespace sftpplus --version 0.5.0 --reuse-values
 ```
 
 The selected chart version is independent of the SFTPPlus `appVersion`.

@@ -19,11 +19,6 @@ storage:
     gid: 1000
     mode: "0770"
 
-# Helm rejects empty passwords. Supply both with --set-file during install.
-credentials:
-  adminPassword: ""
-  workerPassword: ""
-
 workerDeployment:
   replicaCount: 1
   sync:
@@ -50,6 +45,13 @@ workerService:
 # Web Client: /. nginx terminates TLS for the HTTP backends.
 ingress:
   host: YOUR_SFTPPLUS_HOST
+  # Requires cert-manager and an existing ClusterIssuer.
+  certificate:
+    enabled: true
+    secretName: YOUR_TLS_SECRET
+    issuerRef:
+      name: YOUR_CLUSTER_ISSUER
+      kind: ClusterIssuer
   admin:
     enabled: true
     className: nginx
@@ -60,19 +62,15 @@ ingress:
       enabled: true
       path: /worker-admin(/|$)(.*)
       pathType: ImplementationSpecific
-    tlsSecretName: YOUR_TLS_SECRET
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: HTTP
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/rewrite-target: /$2
-      cert-manager.io/cluster-issuer: YOUR_CLUSTER_ISSUER
   worker:
     enabled: true
     className: nginx
     path: /
     pathType: Prefix
     backendPort: http-files
-    tlsSecretName: YOUR_TLS_SECRET
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: HTTP
-      cert-manager.io/cluster-issuer: YOUR_CLUSTER_ISSUER
