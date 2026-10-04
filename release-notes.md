@@ -3,6 +3,7 @@
 ## 0.6.0 (2026-10-04)
 
 - Added a shared `service_name` pod label set to the Helm release name for the controller and worker, making their logs easier to query together in Loki and Grafana.
+- New controller and worker installations write structured `logfmt` activity events to standard output by default. Existing controller configurations are preserved during upgrades; change their Standard Output Logger separately to use `logfmt`.
 
 ## 0.5.0 (2026-09-29)
 
