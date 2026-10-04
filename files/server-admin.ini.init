@@ -21,7 +21,7 @@ enabled = True
 type = standard-stream
 name = Standard Output Logger
 output_format = logfmt
-entry_content = {ts} {id} {component.name} {account.name} {account.peer.address} {account.peer.port} {message} {data_values}
+entry_content = {ts} {loglevel} {id} {msg} {peer.ip} {peer.port} {component.name} {data_values}
 #
 event_groups: !informational
 
