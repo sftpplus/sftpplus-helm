@@ -332,3 +332,13 @@ configure Azure. Restart existing pods after enabling workload identity so the
 webhook can inject their projected tokens. This uses the chart's generic
 metadata and ServiceAccount settings; other identity systems can use their own
 names, labels, and annotations.
+
+## Standard output logs
+
+The admin and worker initialization templates use Logfmt output with event
+timestamp, ID, component, account, peer address and port, message, and event data. Use an image
+with SFTPPlus 6.1.0 Logfmt support. The admin's persisted configuration is not
+replaced during upgrades; update its Standard Output Logger separately.
+Workers regenerate their configuration from the initialization template on
+every start. Customize `output_format` and `entry_content` in the initialization
+templates when packaging the chart.

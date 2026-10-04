@@ -20,7 +20,8 @@ home_folder_path = /opt/sftpplus-storage/user-files/test_user
 enabled = True
 type = standard-stream
 name = Standard Output Logger
-entry_content = {timestamp.iso_8601_local} {id} {component.uuid} {account.name} {account.peer.address}:{account.peer.port} {message}
+output_format = logfmt
+entry_content = {ts} {id} {component.name} {account.name} {account.peer.address} {account.peer.port} {message} {data_values}
 #
 event_groups: !informational
 
