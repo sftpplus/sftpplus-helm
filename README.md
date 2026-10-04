@@ -284,8 +284,10 @@ and workers. Set `adminDeployment.serviceAccountName` and
 `workerDeployment.serviceAccountName`. The chart does not create ServiceAccounts or
 configure a cloud identity. Add pod template labels or annotations under
 `adminDeployment.templateMetadata` and `workerDeployment.templateMetadata`. User supplied labels
-replace chart labels with the same keys. The Deployment and Service selectors
-use the resulting instance and component labels so they still match the pods.
+replace chart labels with the same keys. Both pod templates receive
+`service_name` set to the Helm release name for grouping their logs. The
+Deployment and Service selectors use the resulting instance and component
+labels so they still match the pods.
 Changing those two selector labels after installation requires replacing the
 Deployments because Kubernetes does not allow changing Deployment selectors.
 The chart keeps its initialization checksum annotation so config changes still

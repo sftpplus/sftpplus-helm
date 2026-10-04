@@ -25,7 +25,7 @@
 {{- define "sftpplus.podLabels" -}}
 {{- $root := .root -}}
 {{- $component := .component -}}
-{{- $defaults := dict "app.kubernetes.io/name" "sftpplus" "app.kubernetes.io/instance" $root.Release.Name "app.kubernetes.io/component" $component -}}
+{{- $defaults := dict "app.kubernetes.io/name" "sftpplus" "app.kubernetes.io/instance" $root.Release.Name "app.kubernetes.io/component" $component "service_name" $root.Release.Name -}}
 {{- $custom := (index $root.Values (printf "%sDeployment" $component)).templateMetadata.labels | default dict -}}
 {{- toYaml (mergeOverwrite $defaults $custom) -}}
 {{- end -}}
