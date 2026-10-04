@@ -1,5 +1,9 @@
 # Helm chart release notes
 
+## 0.6.0 (2026-10-04)
+
+- Added a shared `service_name` pod label set to the Helm release name for the controller and worker, making their logs easier to query together in Loki and Grafana.
+
 ## 0.5.0 (2026-09-29)
 
 - Added optional cert-manager Certificate creation for `ingress.host`. The controller and worker Ingresses can share the issued TLS Secret; an existing Issuer or ClusterIssuer is required.

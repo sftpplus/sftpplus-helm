@@ -2,5 +2,5 @@ apiVersion: v2
 name: sftpplus
 description: SFTPPlus controller and file transfer workers for Kubernetes
 type: application
-version: 0.5.0
+version: 0.6.0
 appVersion: "6.1.0"
